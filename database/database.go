@@ -42,7 +42,7 @@ func (db *Database) Close() {
 	db.base_db.Close()
 }
 
-func (db *Database) GetUser(uid int) (string, string, error) {
+func (db *Database) GetUser(uid int64) (string, string, error) {
 	var username, password string
 	err := db.base_db.QueryRow(`
 		SELECT username, password
@@ -52,7 +52,7 @@ func (db *Database) GetUser(uid int) (string, string, error) {
 	return username, password, err
 }
 
-func (db *Database) AddUser(chat_id int, username, password string) error {
+func (db *Database) AddUser(uid int64, username, password string) error {
 	_, err := db.base_db.Exec(`
 	INSERT INTO userinfo (
 		uid,
@@ -61,24 +61,24 @@ func (db *Database) AddUser(chat_id int, username, password string) error {
 		created
 	) 
 	VALUES (?, ?, ?, datetime('now', 'localtime'))
-	`, chat_id, username, password)
+	`, uid, username, password)
 	return err
 }
 
-func (db *Database) UpdateUser(chat_id int, username, password string) error {
-	_, _, err := db.GetUser(chat_id)
+func (db *Database) SetUser(uid int64, username, password string) error {
+	_, _, err := db.GetUser(uid)
 	if err == sql.ErrNoRows {
-		return db.AddUser(chat_id, username, password)
+		return db.AddUser(uid, username, password)
 	}
 	_, err = db.base_db.Exec(`
 	UPDATE userinfo
 	SET username = ?, password = ?, created = datetime('now', 'localtime')
 	WHERE uid = ?
-	`, username, password, chat_id)
+	`, username, password, uid)
 	return err
 }
 
-func (db *Database) DeleteUser(uid int) error {
+func (db *Database) DeleteUser(uid int64) error {
 	_, err := db.base_db.Exec(`
 	DELETE FROM userinfo
 	WHERE uid = ?
